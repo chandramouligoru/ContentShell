@@ -63,11 +63,6 @@ public class ContentShellActivity extends Activity {
         }
         waitForDebuggerIfNeeded();
 
-        Intent workspotServiceIntent = new Intent(ContentShellApplication.context,
-                WorkspotService.class);
-        bindService(workspotServiceIntent, workspotServiceConnection,
-                BIND_AUTO_CREATE);
-
         DeviceUtils.addDeviceSpecificUserAgentSwitch(this);
         try {
             LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER)
@@ -191,83 +186,6 @@ public class ContentShellActivity extends Activity {
                 activeView.loadUrl(url);
             }
         }
-    }
-
-    private final ServiceConnection workspotServiceConnection = new ServiceConnection() {
-
-        public void onServiceConnected(ComponentName className, IBinder service) {
-
-            Log.e(TAG, " onServiceConnected called");
-
-            if (service instanceof WorkspotService.WorkspotServiceBinder) {
-                WorkspotService.WorkspotServiceBinder binder = (WorkspotService.WorkspotServiceBinder) service;
-                ((ContentShellApplication)getApplication()).workspotService = binder.getService();
-//                isWorkspotServiceCurrentlyBound.set(true);
-            } else {
-                // If we did not receive a WorkspotServiceBinder, it is because
-                // we are invoked as a remote process, and we are pre-JB (so not
-                // running as an isolated process). Simulate that now:
-//                IS_APPLICATION_RUNNING_AS_ISOLATED_PROCESS.set(true);
-
-                // Redundant, but making it crystal clear what state the service
-                // is in:
-                ((ContentShellApplication)getApplication()).workspotService = null;
-//                isWorkspotServiceCurrentlyBound.set(false);
-
-                // Attempt to stop the service; any exception is treated as
-                // benign, since the whole point is to stop a service that we
-                // never refer to beyond this point. Note that we do NOT use
-                // WSLog, since it should not actually be accessible at this
-                // point (since we're simulating an isolated process).
-                try {
-                    Handler mainLooper = new Handler(ContentShellApplication.context.getMainLooper());
-                    Runnable runnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                Intent workspotServiceIntent = new Intent(
-                                        ContentShellApplication.context, WorkspotService.class);
-                                stopService(workspotServiceIntent);
-                            } catch (Exception ex) {
-                                Log.d(TAG,
-                                        "Caught and will not rethrow exception while stopping workspot service",
-                                        ex);
-                            }
-                        }
-                    };
-                    mainLooper.post(runnable);
-                } catch (Exception ex) {
-                    Log.d(TAG,
-                            "Caught and will not rethrow exception while posting runnable to stop workspot service",
-                            ex);
-                }
-            }
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            Log.e(TAG, " onServiceDisconnected called");
-//            isWorkspotServiceCurrentlyBound.set(false);
-
-//            //TODO cgoru stopping the service when it is unbound.
-//            stopService(new Intent(
-//                    context, WorkspotService.class));
-        }
-    };
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        Log.e(TAG, " onDestroy called with application context JAI SRIRAM!");
-        ((ContentShellApplication)getApplication()).cleanup();
-        if (workspotServiceConnection != null) {
-            Log.e(TAG, "cleanup inside if " + Process.myPid());
-            unbindService(workspotServiceConnection);
-        }
-
-        Intent workspotServiceIntent = new Intent(ContentShellApplication.context,
-                WorkspotService.class);
-        stopService(workspotServiceIntent);
     }
 
     @Override

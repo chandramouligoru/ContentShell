@@ -24,9 +24,6 @@
         </activity>
 
 
-        <service android:name=".WorkspotService">
-        </service>
-
         <!-- The following service entries exist in order to allow us to
              start more than one sandboxed process. -->
 
